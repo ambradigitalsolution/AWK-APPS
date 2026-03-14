@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Loader2, Eye, EyeOff, User, Lock, Package, MapPin, Phone, Building2, CreditCard, CheckCircle2, Copy, Check, ChevronDown, AlertCircle as AlertCircleIcon } from "lucide-react"
 import { useRole } from "@/lib/contexts/RoleContext"
+import { createClient } from "@/lib/supabase/client"
+
+const supabase = createClient()
 
 interface AuthFormProps {
   type: "sign-in" | "sign-up"
@@ -61,37 +64,121 @@ export function AuthForm({ type }: AuthFormProps) {
     const email = (formData.get("email") as string || "").trim()
     const password = (formData.get("password") as string || "").trim()
 
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsLoading(false)
-
     if (isSignIn) {
-      if (email === "admin" && password === "admin123") {
-        login("owner", { 
-          name: "Owner Ambra", 
-          email: "owner@ambra.id",
-          businessName: "AMBRA Digital Printing",
-          address: "Jl. Raya Utama No. 123, Jakarta Selatan"
-        })
-        setShowSuccess(true)
-        setTimeout(() => router.push("/"), 2000)
-      } else if (email === "mitra" && password === "mitra123") {
-        login("mitra", { 
-          name: "Mitra Ahmad", 
-          email: "ahmad@mitra.com",
-          businessName: "Ahmad Percetakan",
-          address: "Jl. Bekasi Timur No. 45, Jakarta Timur"
-        })
-        setShowSuccess(true)
-        setTimeout(() => router.push("/"), 2000)
-      } else {
-        setErrorStatus("Email atau Password salah!")
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        setErrorStatus(error.message === "Invalid login credentials" ? "Email atau Password salah!" : error.message)
+        setIsLoading(false)
+        return
+      }
+
+      if (data.user) {
+        // Fetch profile to get role and details
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*, organizations(*)')
+          .eq('id', data.user.id)
+          .single()
+
+        if (profile) {
+          login(profile.role as "mitra" | "owner", { 
+            name: profile.full_name || data.user.email?.split('@')[0] || "User", 
+            email: data.user.email || "",
+            businessName: profile.organizations?.name || "AWK Apps",
+            address: profile.address || "",
+            logo: profile.avatar_url
+          })
+          setShowSuccess(true)
+          setTimeout(() => router.push("/"), 1500)
+        } else {
+          // Fallback if profile doesn't exist yet
+          login("mitra", { name: email.split('@')[0], email })
+          setShowSuccess(true)
+          setTimeout(() => router.push("/"), 1500)
+        }
       }
     } else {
-      // Generate affiliate code and show success popup
-      const code = generateAffiliateCode()
-      setAffiliateCode(code)
-      setShowSuccess(true)
+      // Sign Up Logic
+      const fullName = (formData.get("full-name") as string || "").trim()
+      const whatsapp = (formData.get("whatsapp") as string || "").trim()
+      const bankName = selectedBank === "Bank Lain" ? (formData.get("bank-name-other") as string || "").trim() : selectedBank
+      const accountNumber = (formData.get("account-number") as string || "").trim()
+      const address = (formData.get("alamat") as string || "").trim()
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            whatsapp,
+          }
+        }
+      })
+
+      if (error) {
+        setErrorStatus(error.message)
+        setIsLoading(false)
+        return
+      }
+
+      if (data.user) {
+        // Generate affiliate code
+        const code = generateAffiliateCode()
+        setAffiliateCode(code)
+        
+        // 1. Create Organization for this Mitra (or join a default one)
+        // For now, let's treat every new Mitra as their own "Mitra Org"
+        const { data: org, error: orgError } = await supabase
+          .from('organizations')
+          .insert({
+            name: fullName + " Shop",
+            slug: email.split('@')[0] + "-" + Math.floor(Math.random() * 1000)
+          })
+          .select()
+          .single()
+
+        if (orgError) {
+          setErrorStatus("Gagal membuat organisasi: " + orgError.message)
+          setIsLoading(false)
+          return
+        }
+
+        // 2. Create Profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            organization_id: org.id,
+            full_name: fullName,
+            role: 'mitra'
+          })
+
+        if (profileError) {
+          setErrorStatus("Gagal membuat profil: " + profileError.message)
+          setIsLoading(false)
+          return
+        }
+
+        // 3. Create Affiliate record
+        await supabase
+          .from('affiliates')
+          .insert({
+            organization_id: org.id,
+            user_id: data.user.id,
+            name: fullName,
+            code: code,
+            commission_rate: 10 // Default 10%
+          })
+
+        setShowSuccess(true)
+      }
     }
+    setIsLoading(false)
   }
 
   function copyAffiliateCode() {

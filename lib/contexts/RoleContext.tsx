@@ -1,6 +1,9 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+
+const supabase = createClient()
 
 export type Role = "mitra" | "owner"
 
@@ -49,16 +52,64 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   })
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Sync with localStorage to persist through refreshes during demo
+  // Sync with Supabase session
   useEffect(() => {
-    const savedRole = localStorage.getItem("ambra_sim_role") as Role
-    const savedUser = localStorage.getItem("ambra_sim_user")
-    const savedBranding = localStorage.getItem("ambra_business_branding")
-    
-    if (savedRole) setRoleState(savedRole)
-    if (savedUser) setUser(JSON.parse(savedUser))
-    if (savedBranding) setBranding(JSON.parse(savedBranding))
-    setIsLoaded(true)
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session?.user) {
+        // Fetch profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*, organizations(*)')
+          .eq('id', session.user.id)
+          .single()
+
+        if (profile) {
+          setRoleState(profile.role as Role)
+          setUser({
+            name: profile.full_name || session.user.email?.split('@')[0] || "User",
+            email: session.user.email || "",
+            businessName: profile.organizations?.name,
+            address: profile.address,
+            logo: profile.avatar_url
+          })
+        }
+      }
+      
+      const savedBranding = localStorage.getItem("ambra_business_branding")
+      if (savedBranding) setBranding(JSON.parse(savedBranding))
+      
+      setIsLoaded(true)
+    }
+
+    checkUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*, organizations(*)')
+          .eq('id', session.user.id)
+          .single()
+
+        if (profile) {
+          setRoleState(profile.role as Role)
+          setUser({
+            name: profile.full_name || session.user.email?.split('@')[0] || "User",
+            email: session.user.email || "",
+            businessName: profile.organizations?.name,
+            address: profile.address,
+            logo: profile.avatar_url
+          })
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setRoleState("mitra")
+        setUser(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const setRole = (newRole: Role) => {
@@ -90,10 +141,10 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut()
     setUser(null)
-    localStorage.removeItem("ambra_sim_role")
-    localStorage.removeItem("ambra_sim_user")
+    setRoleState("mitra")
   }
 
   return (
