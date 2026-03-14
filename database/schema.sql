@@ -119,6 +119,21 @@ CREATE TABLE IF NOT EXISTS payments (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
 
+-- 11. withdrawals
+CREATE TABLE IF NOT EXISTS withdrawals (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    bank_name TEXT NOT NULL,
+    account_number TEXT NOT NULL,
+    account_holder TEXT NOT NULL,
+    amount NUMERIC NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'completed', 'rejected'
+    note TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
 -- ENABLE RLS
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -130,6 +145,7 @@ ALTER TABLE affiliates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE commissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE withdrawals ENABLE ROW LEVEL SECURITY;
 
 -- RLS POLICIES
 
@@ -196,5 +212,17 @@ CREATE POLICY "Users can view org payments" ON payments
 
 CREATE POLICY "Admins can manage org payments" ON payments
     FOR ALL USING (organization_id = get_my_org_id() AND EXISTS (
+        SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('owner', 'admin')
+    ));
+
+-- Withdrawals
+CREATE POLICY "Users can view own withdrawals" ON withdrawals
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can create own withdrawals" ON withdrawals
+    FOR INSERT WITH CHECK (user_id = auth.uid() AND organization_id = get_my_org_id());
+
+CREATE POLICY "Admins can manage all withdrawals" ON withdrawals
+    FOR ALL USING (EXISTS (
         SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('owner', 'admin')
     ));

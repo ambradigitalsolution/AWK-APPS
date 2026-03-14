@@ -12,6 +12,9 @@ import {
   ShieldCheck, ShieldAlert, Info, Settings2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/client"
+import { useRole } from "@/lib/contexts/RoleContext"
+import { Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,8 +73,12 @@ const avatarColors = [
   "from-cyan-400 to-cyan-600",
 ]
 
+const supabase = createClient()
+
 export default function AffiliatesPage() {
-  const [affiliates, setAffiliates] = React.useState(initialAffiliates)
+  const { user } = useRole()
+  const [affiliates, setAffiliates] = React.useState<any[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
   const [copiedCode, setCopiedCode] = React.useState<string | null>(null)
   const [selectedAffiliate, setSelectedAffiliate] = React.useState<any>(null)
   const [isInfoOpen, setIsInfoOpen] = React.useState(false)
@@ -82,7 +89,42 @@ export default function AffiliatesPage() {
   const [isBulkOpen, setIsBulkOpen] = React.useState(false)
   const [isEditCommOpen, setIsEditCommOpen] = React.useState(false)
   const [newCommission, setNewCommission] = React.useState<number>(10)
-  const [pendingBulkChange, setPendingBulkChange] = React.useState(false)
+  const [isUpdating, setIsUpdating] = React.useState(false)
+
+  const fetchAffiliates = React.useCallback(async () => {
+    if (!user?.organizationId) return
+
+    try {
+      setIsLoading(true)
+      const { data, error } = await supabase
+        .from('affiliates')
+        .select('*')
+        .eq('organization_id', user.organizationId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      
+      // Transform data to match UI needs if necessary
+      const transformed = data.map(aff => ({
+        ...aff,
+        earnings: "Rp 0", // Would need another query or join for real earnings
+        orders: 0,        // Would need another query or join for real orders
+        status: "Active", // Assuming all are active for now or based on a field
+        avatar: aff.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2),
+        rate: aff.commission_rate
+      }))
+      
+      setAffiliates(transformed)
+    } catch (err) {
+      console.error("Error fetching affiliates:", err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user?.organizationId])
+
+  React.useEffect(() => {
+    fetchAffiliates()
+  }, [fetchAffiliates])
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code)
@@ -119,14 +161,25 @@ export default function AffiliatesPage() {
     setIsEditCommOpen(true)
   }
 
-  const confirmEditCommission = () => {
-    if (selectedAffiliate) {
-      setAffiliates(prev => prev.map(aff => 
-        aff.id === selectedAffiliate.id 
-          ? { ...aff, rate: newCommission } 
-          : aff
-      ))
+  const confirmEditCommission = async () => {
+    if (!selectedAffiliate || !user?.organizationId) return
+    
+    try {
+      setIsUpdating(true)
+      const { error } = await supabase
+        .from('affiliates')
+        .update({ commission_rate: newCommission })
+        .eq('id', selectedAffiliate.id)
+
+      if (error) throw error
+      
+      await fetchAffiliates()
       setIsEditCommOpen(false)
+    } catch (err) {
+      console.error("Error updating commission:", err)
+      alert("Gagal memperbarui komisi")
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -134,9 +187,26 @@ export default function AffiliatesPage() {
     setIsBulkOpen(true)
   }
 
-  const confirmBulkUpdate = () => {
-    setAffiliates(prev => prev.map(aff => ({ ...aff, rate: newCommission })))
-    setIsBulkOpen(false)
+  const confirmBulkUpdate = async () => {
+    if (!user?.organizationId) return
+
+    try {
+      setIsUpdating(true)
+      const { error } = await supabase
+        .from('affiliates')
+        .update({ commission_rate: newCommission })
+        .eq('organization_id', user.organizationId)
+
+      if (error) throw error
+      
+      await fetchAffiliates()
+      setIsBulkOpen(false)
+    } catch (err) {
+      console.error("Error in bulk update:", err)
+      alert("Gagal memperbarui semua komisi")
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   return (
@@ -193,81 +263,100 @@ export default function AffiliatesPage() {
             </div>
           </div>
 
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {affiliates.map((affiliate, i) => (
-                  <div key={affiliate.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors group">
-                    <div className="flex items-center gap-3.5">
-                      <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarColors[i % avatarColors.length]} flex items-center justify-center text-white text-xs font-bold`}>
-                        {affiliate.avatar}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold">{affiliate.name}</p>
-                          <span className={cn(
-                            "px-1.5 py-0.5 rounded-full text-[9px] font-semibold transition-colors duration-300",
-                            affiliate.status === "Active" 
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
-                              : "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
-                          )}>
-                            {affiliate.status}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{affiliate.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      {/* Affiliate Code */}
-                      <div className="hidden md:flex items-center gap-1.5">
-                        <code className="px-2 py-1 rounded-md bg-muted text-[11px] font-mono font-semibold">{affiliate.code}</code>
-                        <button 
-                          onClick={() => copyCode(affiliate.code)}
-                          className="p-1 hover:bg-muted rounded transition-colors"
-                        >
-                          {copiedCode === affiliate.code 
-                            ? <Check className="w-3 h-3 text-emerald-500" /> 
-                            : <Copy className="w-3 h-3 text-muted-foreground" />
-                          }
-                        </button>
-                      </div>
-                      {/* Stats */}
-                      <div className="text-right hidden sm:block">
-                        <p className="text-sm font-bold">{affiliate.earnings}</p>
-                        <p className="text-[10px] text-muted-foreground">{affiliate.orders} orders · {affiliate.rate}%</p>
-                      </div>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuLabel>Affiliate Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleInfo(affiliate)} className="gap-2">
-                            <Info className="w-4 h-4" /> Informasi Affiliate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditCommission(affiliate)} className="gap-2">
-                            <Percent className="w-4 h-4" /> Atur Komisi Khusus
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={() => handleStatusToggle(affiliate)}
-                            className={cn("gap-2", affiliate.status === "Active" ? "text-rose-600 focus:text-rose-600" : "text-emerald-600 focus:text-emerald-600")}
-                          >
-                            {affiliate.status === "Active" ? (
-                              <><ShieldAlert className="w-4 h-4" /> Nonaktifkan Akun</>
-                            ) : (
-                              <><ShieldCheck className="w-4 h-4" /> Aktifkan Akun</>
-                            )}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+          <Card className="border-0 shadow-sm min-h-[300px] flex flex-col">
+            <CardContent className="p-0 flex-1 flex flex-col">
+              {isLoading ? (
+                <div className="flex-1 flex items-center justify-center p-12">
+                  <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-violet-600 mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground font-medium">Memuat data affiliate...</p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : affiliates.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center p-12">
+                  <div className="text-center max-w-xs">
+                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-bold mb-1">Belum ada affiliate</h3>
+                    <p className="text-sm text-muted-foreground">Mulai tambahkan mitra affiliate Anda untuk melihat statistik penjualannya di sini.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {affiliates.map((affiliate, i) => (
+                    <div key={affiliate.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors group">
+                      <div className="flex items-center gap-3.5">
+                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarColors[i % avatarColors.length]} flex items-center justify-center text-white text-xs font-bold`}>
+                          {affiliate.avatar}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold">{affiliate.name}</p>
+                            <span className={cn(
+                              "px-1.5 py-0.5 rounded-full text-[9px] font-semibold transition-colors duration-300",
+                              affiliate.status === "Active" 
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
+                                : "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
+                            )}>
+                              {affiliate.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{affiliate.email || 'No email'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        {/* Affiliate Code */}
+                        <div className="hidden md:flex items-center gap-1.5">
+                          <code className="px-2 py-1 rounded-md bg-muted text-[11px] font-mono font-semibold">{affiliate.code}</code>
+                          <button 
+                            onClick={() => copyCode(affiliate.code)}
+                            className="p-1 hover:bg-muted rounded transition-colors"
+                          >
+                            {copiedCode === affiliate.code 
+                              ? <Check className="w-3 h-3 text-emerald-500" /> 
+                              : <Copy className="w-3 h-3 text-muted-foreground" />
+                            }
+                          </button>
+                        </div>
+                        {/* Stats */}
+                        <div className="text-right hidden sm:block">
+                          <p className="text-sm font-bold font-mono">{affiliate.earnings}</p>
+                          <p className="text-[10px] text-muted-foreground font-medium">{affiliate.orders} orders · {affiliate.rate}%</p>
+                        </div>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>Affiliate Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleInfo(affiliate)} className="gap-2">
+                              <Info className="w-4 h-4" /> Informasi Affiliate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditCommission(affiliate)} className="gap-2">
+                              <Percent className="w-4 h-4" /> Atur Komisi Khusus
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleStatusToggle(affiliate)}
+                              className={cn("gap-2", affiliate.status === "Active" ? "text-rose-600 focus:text-rose-600" : "text-emerald-600 focus:text-emerald-600")}
+                            >
+                              {affiliate.status === "Active" ? (
+                                <><ShieldAlert className="w-4 h-4" /> Nonaktifkan Akun</>
+                              ) : (
+                                <><ShieldCheck className="w-4 h-4" /> Aktifkan Akun</>
+                              )}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

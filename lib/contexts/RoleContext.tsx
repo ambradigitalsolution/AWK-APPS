@@ -20,6 +20,7 @@ export interface BusinessBranding {
 interface UserInfo {
   name: string
   email: string
+  organizationId?: string
   businessName?: string
   address?: string
   logo?: string
@@ -70,6 +71,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
           setUser({
             name: profile.full_name || session.user.email?.split('@')[0] || "User",
             email: session.user.email || "",
+            organizationId: profile.organization_id,
             businessName: profile.organizations?.name,
             address: profile.address,
             logo: profile.avatar_url
@@ -98,6 +100,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
           setUser({
             name: profile.full_name || session.user.email?.split('@')[0] || "User",
             email: session.user.email || "",
+            organizationId: profile.organization_id,
             businessName: profile.organizations?.name,
             address: profile.address,
             logo: profile.avatar_url
