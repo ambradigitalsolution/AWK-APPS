@@ -64,6 +64,25 @@ export function AuthForm({ type }: AuthFormProps) {
     const email = (formData.get("email") as string || "").trim()
     const password = (formData.get("password") as string || "").trim()
 
+    // Development / Demo Bypass for requested accounts
+    if (isSignIn) {
+      if ((email === "admin@mail.com" && password === "admin123") || 
+          (email === "mitra@mail.com" && password === "mitra123")) {
+        
+        const isOwner = email === "admin@mail.com";
+        login(isOwner ? "owner" : "mitra", { 
+          name: isOwner ? "Admin Ambra" : "Mitra Affiliate", 
+          email: email,
+          businessName: "Ambra Warna Kemasan",
+          address: "Jl. Industri No. 123",
+        })
+        setShowSuccess(true)
+        setTimeout(() => router.push("/"), 1500)
+        setIsLoading(false)
+        return
+      }
+    }
+
     if (isSignIn) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -452,6 +471,44 @@ export function AuthForm({ type }: AuthFormProps) {
                   type="text"
                   placeholder="No. Rekening" 
                   required 
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Email */}
+              <div className="relative mb-[18px] w-full max-w-[380px] mx-auto">
+                <div 
+                  className="absolute -left-6 top-1/2 -translate-y-1/2 w-14 h-14 bg-gradient-to-br from-[#bb2eed] to-[#34bdf4] flex items-center justify-center shadow-[0_4px_15px_-3px_rgba(0,0,0,0.2)] z-10"
+                  style={{ borderRadius: blobShapes[0] }}
+                >
+                  <User className="text-white w-[22px] h-[22px]" />
+                </div>
+                <input 
+                  id="email" 
+                  name="email" 
+                  type="email"
+                  placeholder="Email" 
+                  required 
+                  autoComplete="email"
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Password */}
+              <div className="relative mb-[18px] w-full max-w-[380px] mx-auto">
+                <div 
+                  className="absolute -left-6 top-1/2 -translate-y-1/2 w-14 h-14 bg-gradient-to-br from-[#bb2eed] to-[#34bdf4] flex items-center justify-center shadow-[0_4px_15px_-3px_rgba(0,0,0,0.2)] z-10"
+                  style={{ borderRadius: blobShapes[1] }}
+                >
+                  <Lock className="text-white w-[22px] h-[22px]" />
+                </div>
+                <input 
+                  id="password" 
+                  name="password" 
+                  type="password"
+                  placeholder="Password" 
+                  required 
+                  autoComplete="new-password"
                   className={inputClass}
                 />
               </div>
