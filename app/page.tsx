@@ -1,3 +1,5 @@
-export default function TestPage() {
-  return <div>Root Page is working</div>
+import { redirect } from "next/navigation"
+
+export default function RootPage() {
+  redirect("/sign-in")
 }
