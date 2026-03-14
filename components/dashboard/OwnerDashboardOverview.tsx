@@ -111,7 +111,7 @@ export function OwnerDashboardOverview() {
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">{stat.name}</p>
-                <p className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</p>
+                <p className="text-xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
               </div>
             </CardContent>
           </Card>
