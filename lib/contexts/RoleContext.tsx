@@ -77,6 +77,14 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
             logo: profile.avatar_url
           })
         }
+      } else {
+        // Check for simulated session if no Supabase session
+        const savedUser = localStorage.getItem("ambra_sim_user")
+        const savedRole = localStorage.getItem("ambra_sim_role")
+        if (savedUser && savedRole) {
+          setUser(JSON.parse(savedUser))
+          setRoleState(savedRole as Role)
+        }
       }
       
       const savedBranding = localStorage.getItem("ambra_business_branding")
@@ -124,6 +132,9 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const login = (newRole: Role, userInfo: UserInfo) => {
     setRoleState(newRole)
     setUser(userInfo)
+    // Persist for refresh
+    localStorage.setItem("ambra_sim_user", JSON.stringify(userInfo))
+    localStorage.setItem("ambra_sim_role", newRole)
   }
 
   const updateUser = (newUserInfo: Partial<UserInfo>) => {
