@@ -9,7 +9,7 @@ import {
   LogOut, ChevronLeft, ChevronRight, Bell, 
   UserCircle, Wallet, History, Banknote,
   CheckCircle2, AlertCircle, Loader2, LogOut as LogOutIcon,
-  ShieldCheck, BarChart3, Factory, Layers
+  ShieldCheck, BarChart3, Factory, Layers, Menu, X
 } from "lucide-react"
 import * as React from "react"
 import { useRole } from "@/lib/contexts/RoleContext"
@@ -162,9 +162,13 @@ export function Navbar() {
           variant="ghost" 
           size="icon" 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-xl bg-violet-500/10 text-violet-600"
+          className="rounded-xl bg-violet-500/10 text-violet-600 transition-all duration-300"
         >
-          {isMobileMenuOpen ? <ChevronLeft className="w-5 h-5 rotate-90" /> : <BarChart3 className="w-5 h-5 rotate-90" />}
+          {isMobileMenuOpen ? (
+            <X className="w-6 h-6 animate-in fade-in zoom-in duration-300" />
+          ) : (
+            <Menu className="w-6 h-6 animate-in fade-in zoom-in duration-300" />
+          )}
         </Button>
       </div>
 

@@ -70,12 +70,12 @@ export default function HistoryPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 animate-fade-in">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">History</h1>
-          <p className="text-muted-foreground">Riwayat semua transaksi komisi dan penarikan.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">History</h1>
+          <p className="text-sm text-muted-foreground">Riwayat semua transaksi komisi dan penarikan.</p>
         </div>
-        <Button variant="outline" className="h-10 gap-2 font-medium">
+        <Button variant="outline" className="h-10 gap-2 font-medium w-full lg:w-auto justify-center">
           <CalendarDays className="w-4 h-4" />
           Pilih Periode
         </Button>
@@ -127,6 +127,7 @@ export default function HistoryPage() {
             </div>
 
             <ChevronRightIcon className={cn("hidden md:block w-5 h-5 -mt-8 transition-colors duration-500", steps.s2 ? "text-blue-500" : "text-muted-foreground/20")} />
+            <div className="md:hidden w-px h-8 bg-slate-200 mx-auto" />
 
             {/* Step 2: Produksi */}
             <div className={cn(
@@ -144,6 +145,7 @@ export default function HistoryPage() {
             </div>
 
             <ChevronRightIcon className={cn("hidden md:block w-5 h-5 -mt-8 transition-colors duration-500", steps.s3 ? "text-amber-500" : "text-muted-foreground/20")} />
+            <div className="md:hidden w-px h-8 bg-slate-200 mx-auto" />
 
             {/* Step 3: Diterima */}
             <div className={cn(
@@ -161,6 +163,7 @@ export default function HistoryPage() {
             </div>
 
             <ChevronRightIcon className={cn("hidden md:block w-5 h-5 -mt-8 transition-colors duration-500", steps.s4 ? "text-indigo-500" : "text-muted-foreground/20")} />
+            <div className="md:hidden w-px h-8 bg-slate-200 mx-auto" />
 
             {/* Step 4: Komisi Aktif */}
             <div className={cn(
@@ -237,81 +240,85 @@ export default function HistoryPage() {
             <MousePointer2 className="w-3 h-3 text-violet-600" />
             <span className="text-[10px] font-bold text-violet-900 uppercase tracking-widest">Klik transaksi untuk melacak status komisi</span>
           </div>
-          <div className="grid grid-cols-12 gap-4 px-5 py-3 border-b bg-muted/30 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-            <div className="col-span-1">Type</div>
-            <div className="col-span-2">ID</div>
-            <div className="col-span-4">Deskripsi</div>
-            <div className="col-span-2 text-right">Jumlah</div>
-            <div className="col-span-2 text-right">Tanggal</div>
-            <div className="col-span-1 text-right">Status</div>
-          </div>
-
-          <div className="divide-y">
-            {filteredTransactions.map((trx) => (
-              <div 
-                key={trx.id} 
-                onClick={() => setSelectedTrx(trx)}
-                className={cn(
-                  "grid grid-cols-12 gap-4 px-5 py-4 hover:bg-violet-500/[0.03] transition-all items-center cursor-pointer group",
-                  selectedTrx?.id === trx.id ? "bg-violet-500/[0.05] border-l-4 border-l-violet-500" : "border-l-4 border-l-transparent"
-                )}
-              >
-                {/* Type Icon */}
-                <div className="col-span-1">
-                  <div className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
-                    trx.type === "commission" ? "bg-emerald-500/10" : "bg-rose-500/10"
-                  )}>
-                    {trx.type === "commission" ? (
-                      <ArrowDownLeft className="w-4 h-4 text-emerald-600" />
-                    ) : (
-                      <ArrowUpRight className="w-4 h-4 text-rose-600" />
-                    )}
-                  </div>
-                </div>
-
-                {/* ID */}
-                <div className="col-span-2">
-                  <code className="text-xs font-mono font-semibold text-foreground">{trx.id}</code>
-                </div>
-
-                {/* Description */}
-                <div className="col-span-4">
-                  <p className="text-sm font-medium group-hover:text-violet-700 transition-colors">{trx.description}</p>
-                  {trx.affiliate !== "-" && (
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Mitra: {trx.affiliate}</p>
-                  )}
-                </div>
-
-                {/* Amount */}
-                <div className="col-span-2 text-right">
-                  <span className={cn(
-                    "text-sm font-bold",
-                    trx.type === "commission" ? "text-emerald-600" : "text-rose-600"
-                  )}>
-                    {trx.amount}
-                  </span>
-                </div>
-
-                {/* Date */}
-                <div className="col-span-2 text-right">
-                  <p className="text-xs text-muted-foreground">{trx.date}</p>
-                </div>
-
-                {/* Status */}
-                <div className="col-span-1 text-right">
-                  <span className={cn(
-                    "px-2 py-1 rounded-full text-[9px] font-bold uppercase",
-                    trx.status === "Completed" ? "bg-emerald-100 text-emerald-700" :
-                    trx.status === "Booking" ? "bg-blue-100 text-blue-700" :
-                    trx.status === "Production" ? "bg-amber-100 text-amber-700" :
-                    "bg-indigo-100 text-indigo-700"
-                  )}>
-                    {trx.status === "Completed" ? "Lunas" : trx.status}
-                  </span>
-                </div>
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20">
+            <div className="min-w-[850px]">
+              <div className="grid grid-cols-12 gap-4 px-5 py-3 border-b bg-muted/30 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider items-center">
+                <div className="col-span-1">Type</div>
+                <div className="col-span-2">ID</div>
+                <div className="col-span-4">Deskripsi</div>
+                <div className="col-span-2 text-right">Jumlah</div>
+                <div className="col-span-2 text-right">Tanggal</div>
+                <div className="col-span-1 text-right">Status</div>
               </div>
-            ))}
+
+              <div className="divide-y">
+                {filteredTransactions.map((trx) => (
+                  <div 
+                    key={trx.id} 
+                    onClick={() => setSelectedTrx(trx)}
+                    className={cn(
+                      "grid grid-cols-12 gap-4 px-5 py-4 hover:bg-violet-500/[0.03] transition-all items-center cursor-pointer group",
+                      selectedTrx?.id === trx.id ? "bg-violet-500/[0.05] border-l-4 border-l-violet-500" : "border-l-4 border-l-transparent"
+                    )}
+                  >
+                    {/* Type Icon */}
+                    <div className="col-span-1">
+                      <div className={cn(
+                        "w-9 h-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
+                        trx.type === "commission" ? "bg-emerald-500/10" : "bg-rose-500/10"
+                      )}>
+                        {trx.type === "commission" ? (
+                          <ArrowDownLeft className="w-4 h-4 text-emerald-600" />
+                        ) : (
+                          <ArrowUpRight className="w-4 h-4 text-rose-600" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ID */}
+                    <div className="col-span-2">
+                      <code className="text-xs font-mono font-semibold text-foreground">{trx.id}</code>
+                    </div>
+
+                    {/* Description */}
+                    <div className="col-span-4">
+                      <p className="text-sm font-medium group-hover:text-violet-700 transition-colors line-clamp-1">{trx.description}</p>
+                      {trx.affiliate !== "-" && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Mitra: {trx.affiliate}</p>
+                      )}
+                    </div>
+
+                    {/* Amount */}
+                    <div className="col-span-2 text-right">
+                      <span className={cn(
+                        "text-sm font-bold",
+                        trx.type === "commission" ? "text-emerald-600" : "text-rose-600"
+                      )}>
+                        {trx.amount}
+                      </span>
+                    </div>
+
+                    {/* Date */}
+                    <div className="col-span-2 text-right">
+                      <p className="text-xs text-muted-foreground whitespace-nowrap">{trx.date}</p>
+                    </div>
+
+                    {/* Status */}
+                    <div className="col-span-1 text-right">
+                      <span className={cn(
+                        "px-2 py-1 rounded-full text-[9px] font-bold uppercase whitespace-nowrap inline-block",
+                        trx.status === "Completed" ? "bg-emerald-100 text-emerald-700" :
+                        trx.status === "Booking" ? "bg-blue-100 text-blue-700" :
+                        trx.status === "Production" ? "bg-amber-100 text-amber-700" :
+                        "bg-indigo-100 text-indigo-700"
+                      )}>
+                        {trx.status === "Completed" ? "Lunas" : trx.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {filteredTransactions.length === 0 && (
@@ -324,15 +331,15 @@ export default function HistoryPage() {
       </Card>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p className="text-[10px] md:text-xs text-muted-foreground text-center sm:text-left">
           Klik pada baris transaksi untuk melihat detail pelacakan di atas
         </p>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" className="h-8 w-8" disabled>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-xs font-medium px-2">1 / 1</span>
+          <span className="text-xs font-medium px-2 whitespace-nowrap">1 / 1</span>
           <Button variant="outline" size="icon" className="h-8 w-8" disabled>
             <ChevronRight className="w-4 h-4" />
           </Button>
