@@ -79,20 +79,6 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
-      // 2. Fallback to localStorage (for bypass/demo accounts)
-      const savedUser = localStorage.getItem("ambra_sim_user")
-      const savedRole = localStorage.getItem("ambra_sim_role")
-      
-      if (savedUser) {
-        try {
-          setUser(JSON.parse(savedUser))
-          if (savedRole) setRoleState(savedRole as Role)
-        } catch (e) {
-          console.error("Failed to parse saved user", e)
-          localStorage.removeItem("ambra_sim_user")
-        }
-      }
-
       const savedBranding = localStorage.getItem("ambra_business_branding")
       if (savedBranding) setBranding(JSON.parse(savedBranding))
       
@@ -133,22 +119,17 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
 
   const setRole = (newRole: Role) => {
     setRoleState(newRole)
-    localStorage.setItem("ambra_sim_role", newRole)
   }
 
   const login = (newRole: Role, userInfo: UserInfo) => {
     setRoleState(newRole)
     setUser(userInfo)
-    localStorage.setItem("ambra_sim_role", newRole)
-    localStorage.setItem("ambra_sim_user", JSON.stringify(userInfo))
   }
 
   const updateUser = (newUserInfo: Partial<UserInfo>) => {
     setUser(prev => {
       const current = prev || { name: "", email: "" }
-      const updated = { ...current, ...newUserInfo }
-      localStorage.setItem("ambra_sim_user", JSON.stringify(updated))
-      return updated
+      return { ...current, ...newUserInfo }
     })
   }
 
