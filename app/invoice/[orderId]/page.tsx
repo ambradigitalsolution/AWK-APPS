@@ -62,7 +62,7 @@ export default function InvoicePage() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center py-10 print:py-0 print:bg-white font-sans text-slate-800">
       
       {/* Invoice Container */}
-      <div className="relative w-full max-w-[850px] bg-white shadow-2xl overflow-hidden print:shadow-none print:max-w-full p-12 md:p-16 min-h-[1100px] flex flex-col">
+      <div className="relative w-full max-w-[850px] bg-white shadow-2xl overflow-hidden print:shadow-none print:max-w-full p-4 sm:p-8 md:p-16 min-h-[1100px] flex flex-col mx-auto transition-all duration-300">
         
         {/* LUNAS Watermark */}
         {(data.totalAmount - data.totalPaid) <= 0 && (
@@ -86,42 +86,42 @@ export default function InvoicePage() {
         </div>
 
         {/* Header */}
-        <div className="flex justify-between items-start pt-8 pb-16">
-          <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start pt-8 pb-10 sm:pb-16 gap-8">
+          <div className="space-y-4 w-full sm:w-auto">
             <div className="flex items-center gap-3">
               {branding.logo ? (
-                <div className="w-16 h-16 rounded-xl overflow-hidden shadow-md border border-slate-100">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden shadow-md border border-slate-100 flex-shrink-0">
                   <img src={branding.logo} alt="Logo" className="w-full h-full object-cover" />
                 </div>
               ) : (
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg border border-blue-400/20">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg border border-blue-400/20 flex-shrink-0">
                   <Package className="w-7 h-7" />
                 </div>
               )}
               <div>
-                <h1 className="text-2xl font-black tracking-tighter text-slate-900 leading-none uppercase">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tighter text-slate-900 leading-none uppercase">
                   {branding.name}
                 </h1>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
                   {branding.name.startsWith("PT") ? branding.name : `PT ${branding.name.toUpperCase()}`}
                 </p>
               </div>
             </div>
           </div>
-          <div className="text-right">
-             <h2 className="text-5xl font-bold text-slate-800 tracking-tight mb-4">INVOICE</h2>
-             <table className="ml-auto text-sm text-right">
+          <div className="text-left sm:text-right w-full sm:w-auto relative z-10">
+             <h2 className="text-3xl sm:text-5xl font-bold text-slate-800 tracking-tight mb-4">INVOICE</h2>
+             <table className="sm:ml-auto text-sm">
                <tbody>
                  <tr>
-                   <td className="pr-6 py-0.5 text-slate-400 font-medium">Invoice</td>
+                   <td className="pr-4 sm:pr-6 py-0.5 text-slate-400 font-medium">Invoice</td>
                    <td className="py-0.5 font-bold text-slate-900">{data.id}</td>
                  </tr>
                  <tr>
-                   <td className="pr-6 py-0.5 text-slate-400 font-medium">Tanggal</td>
+                   <td className="pr-4 sm:pr-6 py-0.5 text-slate-400 font-medium">Tanggal</td>
                    <td className="py-0.5 font-bold text-slate-900">{data.invoiceDate}</td>
                  </tr>
                  <tr>
-                   <td className="pr-6 py-0.5 text-slate-400 font-medium">Mitra ID</td>
+                   <td className="pr-4 sm:pr-6 py-0.5 text-slate-400 font-medium">Mitra ID</td>
                    <td className="py-0.5 font-bold text-slate-800">{data.affiliateCode}</td>
                  </tr>
                </tbody>
@@ -130,15 +130,15 @@ export default function InvoicePage() {
         </div>
 
         {/* Table Section */}
-        <div className="flex-grow">
-          <table className="w-full text-left border-collapse">
+        <div className="flex-grow overflow-x-auto scrollbar-hide">
+          <table className="w-full text-left border-collapse min-w-[650px] sm:min-w-0">
             <thead>
               <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <th className="py-4 font-bold w-12">No.</th>
                 <th className="py-4 font-bold">Produk</th>
                 <th className="py-4 font-bold text-right">Kuantitas</th>
                 <th className="py-4 font-bold text-right">Harga</th>
-                <th className="py-4 font-bold text-right">Pajak</th>
+                <th className="py-4 font-bold text-right hidden sm:table-cell">Pajak</th>
                 <th className="py-4 font-bold text-right">Jumlah</th>
               </tr>
             </thead>
@@ -151,44 +151,47 @@ export default function InvoicePage() {
                     {data.material} • {data.dimensions} • {data.finishing}
                   </p>
                 </td>
-                <td className="py-6 align-top text-right font-medium">{data.quantity.toLocaleString("id-ID")}</td>
-                <td className="py-6 align-top text-right font-medium">{(data.totalAmount / data.quantity).toLocaleString("id-ID")}</td>
-                <td className="py-6 align-top text-right text-slate-400">0%</td>
-                <td className="py-6 align-top text-right font-bold text-slate-900">Rp {data.totalAmount.toLocaleString("id-ID")}</td>
+                <td className="py-6 align-top text-right font-medium whitespace-nowrap">{data.quantity.toLocaleString("id-ID")}</td>
+                <td className="py-6 align-top text-right font-medium whitespace-nowrap">{(data.totalAmount / data.quantity).toLocaleString("id-ID")}</td>
+                <td className="py-6 align-top text-right text-slate-400 hidden sm:table-cell">0%</td>
+                <td className="py-6 align-top text-right font-bold text-slate-900 whitespace-nowrap">Rp {data.totalAmount.toLocaleString("id-ID")}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
         {/* Footer Info & Summary */}
-        <div className="grid grid-cols-2 gap-20 pt-16 mt-auto">
+        <div className="flex flex-col md:grid md:grid-cols-2 gap-10 md:gap-20 pt-16 mt-auto relative z-10">
           {/* Left Column */}
-          <div className="space-y-12">
+          <div className="space-y-8 md:space-y-12">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 mb-4">Tagihan Kepada</h3>
-              <div className="text-xs space-y-1.5 text-slate-600 font-medium pb-4">
+              <h3 className="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Tagihan Kepada</h3>
+              <div className="text-xs space-y-1.5 text-slate-600 font-medium">
                 <p className="text-sm font-bold text-slate-900 mb-1">{data.customer}</p>
                 <p>{data.address}</p>
                 <p>Telp: {data.whatsapp}</p>
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 mb-4">Pesan</h3>
-              <p className="text-xs text-slate-500 leading-relaxed border-b border-slate-200 pb-2">
-                Silahkan transfer ke rekening:<br/>
-                {branding.bankAccount} {branding.bankName} a/n {branding.bankOwner}
-              </p>
+              <h3 className="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Metode Pembayaran</h3>
+              <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Silahkan transfer ke rekening:<br/>
+                  <strong className="text-slate-900">{branding.bankAccount}</strong><br/>
+                  {branding.bankName} a/n {branding.bankOwner}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Right Column */}
-          <div className="space-y-12">
-            <div className="space-y-2">
+          <div className="space-y-8 md:space-y-12">
+            <div className="space-y-3 bg-slate-50/30 p-4 sm:p-6 rounded-2xl border border-slate-100">
                <div className="flex justify-between text-xs font-medium text-slate-600">
                   <span>Subtotal</span>
                   <span>Rp {data.totalAmount.toLocaleString("id-ID")}</span>
                </div>
-               <div className="flex justify-between text-xs font-medium text-slate-600 pt-1">
+               <div className="flex justify-between text-xs font-medium text-slate-600">
                   <span>Pajak (0%)</span>
                   <span>Rp 0</span>
                </div>
@@ -201,20 +204,20 @@ export default function InvoicePage() {
                   <span>Rp {data.totalPaid.toLocaleString("id-ID")}</span>
                </div>
                <div className={cn(
-                 "flex justify-between text-sm font-bold pt-3 mt-1 border-t border-slate-100",
+                 "flex justify-between text-base font-black pt-3 mt-2 border-t border-slate-200 w-full",
                  (data.totalAmount - data.totalPaid) <= 0 ? "text-emerald-600" : "text-blue-600"
                )}>
                   <span>Sisa Tagihan</span>
-                  <span>Rp {(data.totalAmount - data.totalPaid).toLocaleString("id-ID")}</span>
+                  <span className="text-xl">Rp {(data.totalAmount - data.totalPaid).toLocaleString("id-ID")}</span>
                </div>
             </div>
 
-            <div className="text-right pt-4 relative">
-              <p className="text-xs font-medium text-slate-600 mb-20">Dengan Hormat,</p>
+            <div className="text-left md:text-right pt-4 relative">
+              <p className="text-xs font-medium text-slate-600 mb-16 md:mb-20">Dengan Hormat,</p>
               <div className="absolute right-0 bottom-12 opacity-50 pointer-events-none">
-                {/* Space left for wet signature */}
+                {/* Space left for signature */}
               </div>
-              <p className="text-xs font-bold text-slate-900 border-t border-slate-200 inline-block pt-1 min-w-[120px]">
+              <p className="text-xs font-bold text-slate-900 border-t border-slate-200 inline-block pt-1 min-w-[160px]">
                 {branding.bankOwner || "Finance Dept"}
               </p>
             </div>
