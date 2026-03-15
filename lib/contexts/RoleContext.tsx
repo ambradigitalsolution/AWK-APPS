@@ -53,10 +53,10 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   })
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Sync with Supabase session and localStorage fallback
+  // Sync with Supabase session
   useEffect(() => {
     const checkUser = async () => {
-      // 1. Check Supabase Session
+      // Check Supabase Session
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session?.user) {
@@ -76,25 +76,9 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
             address: profile.address,
             logo: profile.avatar_url
           })
-          setIsLoaded(true)
-          return
         }
       }
       
-      // 2. Fallback to localStorage (for demo/simulated accounts)
-      const savedUser = localStorage.getItem("ambra_sim_user")
-      const savedRole = localStorage.getItem("ambra_sim_role")
-      
-      if (savedUser) {
-        try {
-          setUser(JSON.parse(savedUser))
-          if (savedRole) setRoleState(savedRole as Role)
-        } catch (e) {
-          console.error("Failed to parse saved user", e)
-          localStorage.removeItem("ambra_sim_user")
-        }
-      }
-
       const savedBranding = localStorage.getItem("ambra_business_branding")
       if (savedBranding) setBranding(JSON.parse(savedBranding))
       
@@ -112,23 +96,19 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
           .single()
 
         if (profile) {
-          const userInfo = {
+          setUser({
             name: profile.full_name || session.user.email?.split('@')[0] || "User",
             email: session.user.email || "",
             organizationId: profile.organization_id,
             businessName: profile.organizations?.name,
             address: profile.address,
             logo: profile.avatar_url
-          }
+          })
           setRoleState(profile.role as Role)
-          setUser(userInfo)
-          // No need to set localStorage here as we use Supabase as source of truth when session exists
         }
       } else if (event === 'SIGNED_OUT') {
         setRoleState("mitra")
         setUser(null)
-        localStorage.removeItem("ambra_sim_user")
-        localStorage.removeItem("ambra_sim_role")
       }
     })
 
@@ -137,22 +117,17 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
 
   const setRole = (newRole: Role) => {
     setRoleState(newRole)
-    localStorage.setItem("ambra_sim_role", newRole)
   }
 
   const login = (newRole: Role, userInfo: UserInfo) => {
     setRoleState(newRole)
     setUser(userInfo)
-    localStorage.setItem("ambra_sim_role", newRole)
-    localStorage.setItem("ambra_sim_user", JSON.stringify(userInfo))
   }
 
   const updateUser = (newUserInfo: Partial<UserInfo>) => {
     setUser(prev => {
       const current = prev || { name: "", email: "" }
-      const updated = { ...current, ...newUserInfo }
-      localStorage.setItem("ambra_sim_user", JSON.stringify(updated))
-      return updated
+      return { ...current, ...newUserInfo }
     })
   }
 

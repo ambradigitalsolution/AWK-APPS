@@ -71,25 +71,6 @@ export function AuthForm({ type }: AuthFormProps) {
     const email = (formData.get("email") as string || "").trim()
     const password = (formData.get("password") as string || "").trim()
 
-    // Development / Demo Bypass for requested accounts
-    if (isSignIn) {
-      if ((email === "admin@mail.com" && password === "admin123") || 
-          (email === "mitra@mail.com" && password === "mitra123")) {
-        
-        const isOwner = email === "admin@mail.com";
-        login(isOwner ? "owner" : "mitra", { 
-          name: isOwner ? "Admin Ambra" : "Mitra Affiliate", 
-          email: email,
-          businessName: "Ambra Warna Kemasan",
-          address: "Jl. Industri No. 123",
-        })
-        setShowSuccess(true)
-        setTimeout(() => router.push("/"), 1500)
-        setIsLoading(false)
-        return
-      }
-    }
-
     if (isSignIn) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
