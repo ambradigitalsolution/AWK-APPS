@@ -53,13 +53,13 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   })
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Sync with Supabase session
+  // Sync with Supabase session and localStorage fallback
   useEffect(() => {
     const checkUser = async () => {
+      // 1. Check Supabase Session
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session?.user) {
-        // Fetch profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('*, organizations(*)')
@@ -76,9 +76,25 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
             address: profile.address,
             logo: profile.avatar_url
           })
+          setIsLoaded(true)
+          return
         }
       }
       
+      // 2. Fallback to localStorage (for demo/simulated accounts)
+      const savedUser = localStorage.getItem("ambra_sim_user")
+      const savedRole = localStorage.getItem("ambra_sim_role")
+      
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser))
+          if (savedRole) setRoleState(savedRole as Role)
+        } catch (e) {
+          console.error("Failed to parse saved user", e)
+          localStorage.removeItem("ambra_sim_user")
+        }
+      }
+
       const savedBranding = localStorage.getItem("ambra_business_branding")
       if (savedBranding) setBranding(JSON.parse(savedBranding))
       
@@ -96,19 +112,23 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
           .single()
 
         if (profile) {
-          setRoleState(profile.role as Role)
-          setUser({
+          const userInfo = {
             name: profile.full_name || session.user.email?.split('@')[0] || "User",
             email: session.user.email || "",
             organizationId: profile.organization_id,
             businessName: profile.organizations?.name,
             address: profile.address,
             logo: profile.avatar_url
-          })
+          }
+          setRoleState(profile.role as Role)
+          setUser(userInfo)
+          // No need to set localStorage here as we use Supabase as source of truth when session exists
         }
       } else if (event === 'SIGNED_OUT') {
         setRoleState("mitra")
         setUser(null)
+        localStorage.removeItem("ambra_sim_user")
+        localStorage.removeItem("ambra_sim_role")
       }
     })
 
@@ -145,9 +165,15 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
     setUser(null)
     setRoleState("mitra")
+    localStorage.removeItem("ambra_sim_user")
+    localStorage.removeItem("ambra_sim_role")
   }
 
   return (

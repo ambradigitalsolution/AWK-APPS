@@ -21,7 +21,7 @@ export function Navbar() {
   const [showLogoutModal, setShowLogoutModal] = React.useState(false)
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
   const [logoutSuccess, setLogoutSuccess] = React.useState(false)
-  const { role, user } = useRole()
+  const { role, user, logout } = useRole()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
 
   // Close mobile menu when pathname changes
@@ -77,14 +77,18 @@ export function Navbar() {
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
-    // Simulate logout process
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsLoggingOut(false)
-    setLogoutSuccess(true)
-    // Wait for success animation then redirect
-    setTimeout(() => {
-      router.push("/sign-in")
-    }, 1000)
+    try {
+      await logout()
+      setIsLoggingOut(false)
+      setLogoutSuccess(true)
+      // Wait for success animation then redirect
+      setTimeout(() => {
+        router.push("/sign-in")
+      }, 1000)
+    } catch (error) {
+      console.error("Logout failed:", error)
+      setIsLoggingOut(false)
+    }
   }
 
   return (

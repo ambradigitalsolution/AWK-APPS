@@ -52,8 +52,15 @@ export function AuthForm({ type }: AuthFormProps) {
     return code
   }
 
-  const { login, user } = useRole()
+  const { login, user, isLoaded } = useRole()
   const [errorStatus, setErrorStatus] = React.useState("")
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (isLoaded && user) {
+      router.push("/")
+    }
+  }, [user, isLoaded, router])
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
